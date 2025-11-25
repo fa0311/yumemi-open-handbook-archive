@@ -1,0 +1,4 @@
+backup
+.env
+node_modules
+output
