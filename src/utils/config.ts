@@ -7,7 +7,7 @@ const envSchema = z.object({
     .string()
     .default("https://yumemi.notion.site/")
     .transform((url) => new URL(url)),
-  DEPLOY_BASE_PATH: z.string().default(""),
+  DEPLOY_BASE_PATH: z.string().default("/yumemi-open-handbook-archive/"),
   OUTPUT_DIR: z.string().default("output"),
   VIEWPORT_WIDTH: z.coerce.number().int().positive().default(1920),
   VIEWPORT_HEIGHT: z.coerce.number().int().positive().default(1080),

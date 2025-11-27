@@ -32,7 +32,7 @@ const downloadResource = async (url: URL, outputPath: string) => {
   }
 };
 
-const generateSafePath = (url: URL, basePath: string, isDirectory: boolean) => {
+const generateSafePath = (url: URL, isDirectory: boolean) => {
   const toSafeName = (name: string) => {
     const trimedName = name.trim();
     const safeName = sanitize(trimedName).slice(0, 42);
@@ -51,7 +51,7 @@ const generateSafePath = (url: URL, basePath: string, isDirectory: boolean) => {
       const decoded = decodeURIComponent(segment);
       return toSafeName(decoded);
     });
-    return posix.join(basePath, ...directories);
+    return posix.join(...directories);
   } else {
     const directories = pathSegments.slice(0, -1).map((segment) => {
       const decoded = decodeURIComponent(segment);
@@ -63,7 +63,7 @@ const generateSafePath = (url: URL, basePath: string, isDirectory: boolean) => {
     const name = extension ? lastSegment.slice(0, lastSegment.lastIndexOf(".")) : lastSegment;
     const safeName = toSafeName(decodeURIComponent(name));
 
-    return posix.join(basePath, ...directories, `${safeName}${extension}`);
+    return posix.join(...directories, `${safeName}${extension}`);
   }
 };
 
@@ -77,8 +77,8 @@ const getChildUrls = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
     .map((elem) => {
       const href = $(elem).attr("href")!;
       const url = new URL(href, baseUrl);
-      const newHref = generateSafePath(url, basePath, true);
-      $(elem).attr("href", newHref);
+      const newHref = generateSafePath(url, true);
+      $(elem).attr("href", posix.join(basePath, newHref));
       return [url, newHref] as [URL, string];
     })
     .filter(([url]) => url.origin === new URL(baseUrl).origin);
@@ -95,8 +95,8 @@ const replaceUrl = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
     .map((elem) => {
       const href = $(elem).attr("href")!;
       const url = new URL(href, baseUrl);
-      const newHref = generateSafePath(url, basePath, false);
-      $(elem).attr("href", newHref);
+      const newHref = generateSafePath(url, false);
+      $(elem).attr("href", posix.join(basePath, newHref));
       return [url, newHref] as [URL, string];
     });
 
@@ -115,8 +115,8 @@ const replaceUrl = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
     .map((elem) => {
       const href = $(elem).attr("href")!;
       const url = new URL(href, baseUrl);
-      const newHref = generateSafePath(url, basePath, false);
-      $(elem).attr("href", newHref);
+      const newHref = generateSafePath(url, false);
+      $(elem).attr("href", posix.join(basePath, newHref));
       return [url, newHref] as [URL, string];
     });
 
@@ -129,8 +129,8 @@ const replaceUrl = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
     .map((elem) => {
       const content = $(elem).attr("content")!;
       const url = new URL(content, baseUrl);
-      const newContent = generateSafePath(url, basePath, false);
-      $(elem).attr("content", newContent);
+      const newContent = generateSafePath(url, false);
+      $(elem).attr("content", posix.join(basePath, newContent));
       return [url, newContent] as [URL, string];
     });
 
@@ -143,8 +143,8 @@ const replaceUrl = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
     .map((elem) => {
       const src = $(elem).attr("src")!;
       const url = new URL(src, baseUrl);
-      const newSrc = generateSafePath(url, basePath, false);
-      $(elem).attr("src", newSrc);
+      const newSrc = generateSafePath(url, false);
+      $(elem).attr("src", posix.join(basePath, newSrc));
       return [url, newSrc] as [URL, string];
     });
 
@@ -175,10 +175,10 @@ const replaceUrl = ($: CheerioAPI, baseUrl: URL, basePath: string) => {
         .map((match) => {
           const urlStr = match[1];
           const url = new URL(urlStr, baseUrl);
-          const newPath = generateSafePath(url, basePath, false);
+          const newPath = generateSafePath(url, false);
 
           const oldStyle = $(elem).attr("style")!;
-          const newStyle = oldStyle.replace(match[0], `url("${newPath}")`);
+          const newStyle = oldStyle.replace(match[0], `url("${posix.join(basePath, newPath)}")`);
           $(elem).attr("style", newStyle);
 
           return [url, newPath] as [URL, string];
@@ -211,7 +211,13 @@ export const main = async () => {
       gotoOptions: { waitUntil: "networkidle2", timeout: env.PAGE_LOAD_TIMEOUT },
     },
     async ({ goto }) => {
+      let i = 0;
       await syncLoop(urls, async ([rawUrl, file]) => {
+        i++;
+        if (i > 10) {
+          return;
+        }
+
         const [res, page] = await goto(rawUrl);
         logger.info(`Processing: ${rawUrl.href}`);
         if (res?.ok()) {
