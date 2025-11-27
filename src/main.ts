@@ -211,13 +211,7 @@ export const main = async () => {
       gotoOptions: { waitUntil: "networkidle2", timeout: env.PAGE_LOAD_TIMEOUT },
     },
     async ({ goto }) => {
-      let i = 0;
       await syncLoop(urls, async ([rawUrl, file]) => {
-        i++;
-        if (i > 10) {
-          return;
-        }
-
         const [res, page] = await goto(rawUrl);
         logger.info(`Processing: ${rawUrl.href}`);
         if (res?.ok()) {
