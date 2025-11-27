@@ -3,13 +3,21 @@ import { z } from "zod";
 
 // 環境変数のスキーマ定義
 const envSchema = z.object({
-  TARGET_URL: z.string().url().default("https://yumemi.notion.site/"),
+  TARGET_URL: z
+    .string()
+    .default("https://yumemi.notion.site/")
+    .transform((url) => new URL(url)),
+  DEPLOY_BASE_PATH: z.string().default(""),
   OUTPUT_DIR: z.string().default("output"),
   VIEWPORT_WIDTH: z.coerce.number().int().positive().default(1920),
   VIEWPORT_HEIGHT: z.coerce.number().int().positive().default(1080),
   PAGE_LOAD_TIMEOUT: z.coerce.number().int().positive().default(60000),
-  CONTENT_STABILIZATION_DELAY: z.coerce.number().int().nonnegative().default(3000),
+  CONTENT_DOWNLOAD_DELAY: z.coerce.number().int().nonnegative().default(0),
   DEV_SERVER_PORT: z.coerce.number().int().positive().default(3000),
+  HEADLESS: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
 });
 
 // 環境変数をパースして検証

@@ -4,12 +4,11 @@ type createBrowserType = {
   paramsOptions: LaunchOptions;
   viewportOptions: Viewport;
   gotoOptions: GoToOptions;
-  delay: number;
 };
 
-export const createBrowser = async (
+export const createBrowser = async <T>(
   param: createBrowserType,
-  callback: (context: ReturnType<typeof browserParam>) => Promise<void>,
+  callback: (context: ReturnType<typeof browserParam>) => Promise<T>,
 ) => {
   const browser = await puppeteer.launch(param.paramsOptions);
   const page = await browser.newPage();
@@ -23,10 +22,9 @@ export const createBrowser = async (
 };
 
 const browserParam = (page: Page, param: createBrowserType) => {
-  const goto = async (url: string) => {
-    await page.goto(url, param.gotoOptions);
-    await new Promise((resolve) => setTimeout(resolve, param.delay));
-    return page;
+  const goto = async (url: URL) => {
+    const res = await page.goto(url.href, param.gotoOptions);
+    return [res, page] as const;
   };
   return { goto };
 };
